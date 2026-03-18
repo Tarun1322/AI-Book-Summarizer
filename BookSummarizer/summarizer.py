@@ -1,6 +1,8 @@
-import anthropic, json, re, os
+import json, re, os
+import google.generativeai as genai
 
-client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+client = genai.GenerativeModel('gemini-1.5-flash')
 
 STYLES = {
     'short':     'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
@@ -58,13 +60,8 @@ BOOK CONTENT:
 
 Return ONLY the JSON. No markdown fences, no explanation."""
 
-        message = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=1800,
-            messages=[{"role": "user", "content": prompt}]
-        )
-
-        raw = message.content[0].text.strip()
+        response = client.generate_content(prompt)
+        raw = response.text.strip()
         raw = re.sub(r'^```json\s*', '', raw)
         raw = re.sub(r'^```\s*', '', raw)
         raw = re.sub(r'\s*```$', '', raw).strip()
