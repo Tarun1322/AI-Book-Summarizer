@@ -8,7 +8,7 @@ import google.generativeai as genai
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Use stable free model
-client = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.GenerativeModel("gemini-2.0-flash-lite")
 
 
 STYLES = {
