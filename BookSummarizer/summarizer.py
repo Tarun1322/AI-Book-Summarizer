@@ -1,7 +1,8 @@
-import json, re, os
 import google.generativeai as genai
+import os
 
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 client = genai.GenerativeModel("gemini-1.5-flash")
 
 STYLES = {
