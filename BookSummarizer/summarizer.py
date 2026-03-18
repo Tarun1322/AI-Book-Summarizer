@@ -1,5 +1,7 @@
-import google.generativeai as genai
+import json
+import re
 import os
+import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -56,7 +58,7 @@ Return ONLY a valid JSON object with exactly these keys:
 
 BOOK CONTENT:
 ———
-{content[:13000]}
+{content[:8000]}
 ———
 
 Return ONLY the JSON. No markdown fences, no explanation."""
