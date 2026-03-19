@@ -1,67 +1,74 @@
-import google.generativeai as genai
+from groq import Groq
 import json, re, os
 
-genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-1.5-flash')
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 STYLES = {
-    'short':     'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
-    'detailed':  'Write a rich comprehensive summary (400-500 words) covering central themes, narrative arc, key arguments, and conclusions.',
-    'keypoints': 'Extract exactly 12 most important key points as a clean numbered list. Each must be a complete, insightful sentence.',
-    'chapter':   'Identify and summarize each chapter or major section with clear headings.',
-    'lessons':   'Extract 10 profound life lessons or practical wisdom readers can apply immediately. Number each one.',
-    'study':     'Create a complete study guide: main themes, key concepts, important ideas, critical analysis, and exam-ready notes.'
+    'short': 'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
+    'detailed': 'Write a rich comprehensive summary (400-500 words) covering central themes, narrative arc, key arguments, and conclusions.',
+    'keypoints': 'Extract exactly 12 most important key points as a clean numbered list.',
+    'chapter': 'Identify and summarize each chapter or major section with clear headings.',
+    'lessons': 'Extract 10 profound life lessons readers can apply immediately.',
+    'study': 'Create a complete study guide with themes, concepts and exam notes.'
 }
 
 LANGUAGES = {
-    'english':  'Respond in polished, elegant English.',
-    'hindi':    'Poora jawab sirf Hindi mein likho (Devanagari script).',
-    'hinglish': 'Write in natural Hinglish — the way educated urban Indians speak.',
-    'punjabi':  'Respond entirely in Punjabi using Gurmukhi script.',
-    'urdu':     'Poora jawab khoobsurat Urdu mein likho.'
+    'english': 'Respond in polished, elegant English.',
+    'hindi': 'Poora jawab sirf Hindi mein likho.',
+    'hinglish': 'Write in natural Hinglish.',
+    'punjabi': 'Respond entirely in Punjabi.',
+    'urdu': 'Poora jawab Urdu mein likho.'
 }
 
 TONES = {
-    'story':        'Write in an engaging story-telling style — narrative, vivid, compelling.',
-    'simple':       'Use very simple, clear, easy-to-understand language. Short sentences.',
-    'professional': 'Crisp, authoritative, objective — formal and precise.',
-    'student':      'Clear, accessible, memorable — perfect for study and exam prep.'
+    'story': 'Write in engaging storytelling style.',
+    'simple': 'Use simple easy language.',
+    'professional': 'Formal and precise.',
+    'student': 'Clear and easy for students.'
 }
 
+
 class Summarizer:
+
     def analyze(self, title, author, content, style, language, tone):
+
         wc = len(content.split())
-        prompt = f"""You are a world-class AI literary analyst.
 
-Book: "{title or 'Unknown Title'}" by {author or 'Unknown Author'}
-Word count: ~{wc} words (~{round(wc/238)} min read)
-LANGUAGE: {LANGUAGES.get(language, LANGUAGES['english'])}
-TONE: {TONES.get(tone, TONES['story'])}
-TASK: {STYLES.get(style, STYLES['short'])}
+        prompt = f"""
+You are a world-class AI literary analyst.
 
-Return ONLY a valid JSON object with exactly these keys:
+Book: "{title or 'Unknown Title'}"
+Author: "{author or 'Unknown Author'}"
+
+LANGUAGE: {LANGUAGES.get(language)}
+TONE: {TONES.get(tone)}
+TASK: {STYLES.get(style)}
+
+Return ONLY JSON:
+
 {{
-  "summary": "the summary based on the task above",
-  "key_insights": "8 powerful numbered insights, one per line",
-  "important_quotes": "5 notable quotes, each on new line, format: Quote text — Context",
-  "chapter_breakdown": "chapter or section summaries with clear headings",
-  "life_lessons": "7 numbered actionable life lessons, one per line",
-  "reading_time_original": {round(wc/238)},
-  "time_saved": {max(1, round(wc/238) - 3)},
-  "difficulty_level": "Beginner or Intermediate or Advanced",
-  "genre_tags": ["tag1", "tag2", "tag3"],
-  "one_line_pitch": "One perfect sentence that makes someone want to read this book"
+"summary":"",
+"key_insights":"",
+"important_quotes":"",
+"chapter_breakdown":"",
+"life_lessons":"",
+"reading_time_original":{round(wc/238)},
+"time_saved":{max(1, round(wc/238)-3)},
+"difficulty_level":"",
+"genre_tags":["tag1","tag2","tag3"],
+"one_line_pitch":""
 }}
 
-BOOK CONTENT:
-———
-{content[:13000]}
-———
+CONTENT:
+{content[:8000]}
+"""
 
-Return ONLY the JSON. No markdown fences, no explanation."""
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[{"role": "user", "content": prompt}]
+        )
 
-        response = model.generate_content(prompt)
-        raw = response.text.strip()
+        raw = response.choices[0].message.content.strip()
 
         raw = re.sub(r'^```json\s*', '', raw)
         raw = re.sub(r'^```\s*', '', raw)
@@ -69,14 +76,19 @@ Return ONLY the JSON. No markdown fences, no explanation."""
 
         try:
             return json.loads(raw)
+
         except json.JSONDecodeError:
+
             m = re.search(r'\{[\s\S]*\}', raw)
+
             try:
                 return json.loads(m.group(0)) if m else self._fallback(raw, wc)
+
             except Exception:
                 return self._fallback(raw, wc)
 
     def _fallback(self, raw, wc):
+
         return {
             "summary": raw,
             "key_insights": "",
