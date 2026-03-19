@@ -5,7 +5,7 @@ import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-client = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 STYLES = {
     'short':     'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
