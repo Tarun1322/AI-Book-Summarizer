@@ -1,11 +1,12 @@
-import json
-import re
-import os
 import google.generativeai as genai
+import os
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-client = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+response = model.generate_content("Explain machine learning in simple words.")
+print(response.text)
 
 STYLES = {
     'short':     'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
