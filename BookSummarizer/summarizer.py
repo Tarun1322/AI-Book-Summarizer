@@ -1,12 +1,8 @@
 import google.generativeai as genai
-import os
+import json, re, os
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-response = model.generate_content("Explain machine learning in simple words.")
-print(response.text)
+genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 STYLES = {
     'short':     'Write ONE powerful paragraph (130-160 words) capturing the soul and essence of this book.',
@@ -59,13 +55,14 @@ Return ONLY a valid JSON object with exactly these keys:
 
 BOOK CONTENT:
 ———
-{content[:8000]}
+{content[:13000]}
 ———
 
 Return ONLY the JSON. No markdown fences, no explanation."""
 
-        response = client.generate_content(prompt)
+        response = model.generate_content(prompt)
         raw = response.text.strip()
+
         raw = re.sub(r'^```json\s*', '', raw)
         raw = re.sub(r'^```\s*', '', raw)
         raw = re.sub(r'\s*```$', '', raw).strip()
